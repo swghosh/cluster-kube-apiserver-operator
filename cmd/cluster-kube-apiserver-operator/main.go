@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -27,6 +28,7 @@ import (
 )
 
 func main() {
+	fmt.Println("[swghosh] Running cluster-kube-apiserver-operator binary")
 	command := NewOperatorCommand(context.Background())
 	code := cli.Run(command)
 	os.Exit(code)

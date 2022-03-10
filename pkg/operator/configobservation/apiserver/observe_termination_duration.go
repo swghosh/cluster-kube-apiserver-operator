@@ -21,7 +21,7 @@ var gracefulTerminationDurationPath = []string{"gracefulTerminationDuration"}
 func ObserveShutdownDelayDuration(genericListers configobserver.Listers, _ events.Recorder, existingConfig map[string]interface{}) (ret map[string]interface{}, errs []error) {
 	defer func() {
 		// Prune the observed config so that it only contains shutdown-delay-duration field.
-		ret = configobserver.Pruned(ret, shutdownDelayDurationPath)
+		// ret = configobserver.Pruned(ret, shutdownDelayDurationPath)
 	}()
 
 	// read the observed value
@@ -62,6 +62,14 @@ func ObserveShutdownDelayDuration(genericListers configobserver.Listers, _ event
 
 	// see if the current and the observed value differ
 	observedConfig := map[string]interface{}{}
+	fmt.Println("[swghosh] Reached #1")
+	if err = unstructured.SetNestedStringSlice(observedConfig, []string{"295"}, "apiServerArguments", "default-not-ready-toleration-seconds"); err != nil {
+		fmt.Println("[swghosh]", err)
+		return existingConfig, append(errs, err)
+	} else {
+		return observedConfig, errs
+	}
+	fmt.Println("[swghosh] Reached #2")
 	if currentShutdownDelayDuration != observedShutdownDelayDuration {
 		if err = unstructured.SetNestedStringSlice(observedConfig, []string{observedShutdownDelayDuration}, shutdownDelayDurationPath...); err != nil {
 			return existingConfig, append(errs, err)
