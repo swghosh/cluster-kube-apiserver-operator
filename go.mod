@@ -12,9 +12,9 @@ require (
 	github.com/google/go-cmp v0.5.6
 	github.com/imdario/mergo v0.3.8
 	github.com/miekg/dns v1.1.25
-	github.com/openshift/api v0.0.0-20220209124712-b632c5fc10c0
+	github.com/openshift/api v0.0.0-20220419223032-d2198688dc20
 	github.com/openshift/build-machinery-go v0.0.0-20211213093930-7e33a7eb4ce3
-	github.com/openshift/client-go v0.0.0-20211209144617-7385dd6338e3
+	github.com/openshift/client-go v0.0.0-20220414150939-0c6582efff5f
 	github.com/openshift/library-go v0.0.0-20220314154234-23821c3f28e0
 	github.com/pkg/profile v1.5.0 // indirect
 	github.com/prometheus-operator/prometheus-operator/pkg/client v0.45.0
