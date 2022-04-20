@@ -20,6 +20,7 @@ type Listers struct {
 	InfrastructureLister_ configlistersv1.InfrastructureLister
 	ImageConfigLister     configlistersv1.ImageLister
 	NetworkLister         configlistersv1.NetworkLister
+	NodeLister            configlistersv1.NodeLister
 	ProxyLister_          configlistersv1.ProxyLister
 	SchedulerLister       configlistersv1.SchedulerLister
 

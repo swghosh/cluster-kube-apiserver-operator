@@ -21,6 +21,7 @@ import (
 	"github.com/openshift/cluster-kube-apiserver-operator/pkg/operator/connectivitycheckcontroller"
 	"github.com/openshift/cluster-kube-apiserver-operator/pkg/operator/featureupgradablecontroller"
 	"github.com/openshift/cluster-kube-apiserver-operator/pkg/operator/kubeletversionskewcontroller"
+	"github.com/openshift/cluster-kube-apiserver-operator/pkg/operator/latencyprofilecontroller"
 	"github.com/openshift/cluster-kube-apiserver-operator/pkg/operator/nodekubeconfigcontroller"
 	"github.com/openshift/cluster-kube-apiserver-operator/pkg/operator/operatorclient"
 	"github.com/openshift/cluster-kube-apiserver-operator/pkg/operator/resourcesynccontroller"
@@ -255,6 +256,7 @@ func RunOperator(ctx context.Context, controllerContext *controllercmd.Controlle
 			{Group: "admissionregistration.k8s.io", Resource: "validatingwebhookconfigurations"},
 			{Group: "controlplane.operator.openshift.io", Resource: "podnetworkconnectivitychecks", Namespace: "openshift-kube-apiserver"},
 			{Group: "apiserver.openshift.io", Resource: "apirequestcounts"},
+			{Group: "config.openshift.io", Resource: "nodes", Name: "cluster"},
 		},
 
 		configClient.ConfigV1(),
@@ -369,6 +371,15 @@ func RunOperator(ctx context.Context, controllerContext *controllercmd.Controlle
 		controllerContext.EventRecorder,
 	)
 
+	latencyProfileController := latencyprofilecontroller.NewLatencyProfileController(
+		operatorClient,
+		configClient.ConfigV1(),
+		configInformers.Config().V1().Nodes(),
+		kubeInformersForNamespaces,
+		kubeClient,
+		controllerContext.EventRecorder,
+	)
+
 	webhookSupportabilityController := webhooksupportabilitycontroller.NewWebhookSupportabilityController(
 		operatorClient,
 		kubeInformersForNamespaces,
@@ -406,6 +417,7 @@ func RunOperator(ctx context.Context, controllerContext *controllercmd.Controlle
 	go staleConditionsController.Run(ctx, 1)
 	go connectivityCheckController.Run(ctx, 1)
 	go kubeletVersionSkewController.Run(ctx, 1)
+	go latencyProfileController.Run(ctx, 1)
 	go webhookSupportabilityController.Run(ctx, 1)
 
 	<-ctx.Done()

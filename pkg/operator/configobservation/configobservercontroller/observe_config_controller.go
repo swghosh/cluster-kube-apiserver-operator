@@ -22,6 +22,7 @@ import (
 	"github.com/openshift/cluster-kube-apiserver-operator/pkg/operator/configobservation/etcdendpoints"
 	"github.com/openshift/cluster-kube-apiserver-operator/pkg/operator/configobservation/images"
 	"github.com/openshift/cluster-kube-apiserver-operator/pkg/operator/configobservation/network"
+	"github.com/openshift/cluster-kube-apiserver-operator/pkg/operator/configobservation/node"
 	"github.com/openshift/cluster-kube-apiserver-operator/pkg/operator/configobservation/scheduler"
 	"github.com/openshift/cluster-kube-apiserver-operator/pkg/operator/operatorclient"
 )
@@ -63,6 +64,7 @@ func NewConfigObserver(
 		configInformer.Config().V1().Authentications().Informer(),
 		configInformer.Config().V1().APIServers().Informer(),
 		configInformer.Config().V1().Networks().Informer(),
+		configInformer.Config().V1().Nodes().Informer(),
 		configInformer.Config().V1().Proxies().Informer(),
 		configInformer.Config().V1().Schedulers().Informer(),
 	}
@@ -81,6 +83,7 @@ func NewConfigObserver(
 				ImageConfigLister:     configInformer.Config().V1().Images().Lister(),
 				InfrastructureLister_: configInformer.Config().V1().Infrastructures().Lister(),
 				NetworkLister:         configInformer.Config().V1().Networks().Lister(),
+				NodeLister:            configInformer.Config().V1().Nodes().Lister(),
 				ProxyLister_:          configInformer.Config().V1().Proxies().Lister(),
 				SchedulerLister:       configInformer.Config().V1().Schedulers().Lister(),
 
@@ -101,6 +104,7 @@ func NewConfigObserver(
 					configInformer.Config().V1().Images().Informer().HasSynced,
 					configInformer.Config().V1().Infrastructures().Informer().HasSynced,
 					configInformer.Config().V1().Networks().Informer().HasSynced,
+					configInformer.Config().V1().Nodes().Informer().HasSynced,
 					configInformer.Config().V1().OAuths().Informer().HasSynced,
 					configInformer.Config().V1().Proxies().Informer().HasSynced,
 					configInformer.Config().V1().Schedulers().Informer().HasSynced,
@@ -138,6 +142,8 @@ func NewConfigObserver(
 			network.ObserveServicesSubnet,
 			network.ObserveExternalIPPolicy,
 			network.ObserveServicesNodePortRange,
+			node.ObserveNotReadyTolerationSeconds,
+			node.ObserveUnreachableTolerationSeconds,
 			proxy.NewProxyObserveFunc([]string{"targetconfigcontroller", "proxy"}),
 			images.ObserveInternalRegistryHostname,
 			images.ObserveExternalRegistryHostnames,
