@@ -88,18 +88,34 @@ func (c *latencyProfileController) sync(ctx context.Context, syncCtx factory.Syn
 		return nil
 	}
 
-	condition := metav1.Condition{
-		Type:   apiconfigv1.KubeControllerManagerDegraded,
+	degradedCondition := metav1.Condition{
+		Type:   apiconfigv1.KubeAPIServerDegraded,
+		Status: metav1.ConditionUnknown,
+	}
+	progressingCondition := metav1.Condition{
+		Type:   apiconfigv1.KubeAPIServerProgressing,
+		Status: metav1.ConditionUnknown,
+	}
+	completedCondition := metav1.Condition{
+		Type:   apiconfigv1.KubeAPIServerComplete,
 		Status: metav1.ConditionUnknown,
 	}
 	if configNodeObj.Spec.WorkerLatencyProfile == "" {
 		// TODO: in case worker latency profile is transitioned
 		// from Default/Medium/Low to ""
 		// check that the required apiServerArgs should vanish
-		condition.Reason = reasonLatencyProfileEmpty
-		condition.Message = "worker latency profile not set on cluster"
-		condition.Status = metav1.ConditionFalse
-		_, err := c.updateConfigNodeStatus(ctx, condition)
+		degradedCondition.Status = metav1.ConditionFalse
+		progressingCondition.Status = metav1.ConditionFalse
+		completedCondition.Status = metav1.ConditionTrue
+
+		degradedCondition.Reason = "AsExpected"
+		progressingCondition.Reason = "AsExpected"
+		completedCondition.Reason = reasonLatencyProfileEmpty
+
+		completedCondition.Message = "worker latency profile not set on cluster"
+
+		_, _ = c.updateConfigNodeStatus(ctx, degradedCondition, progressingCondition, completedCondition)
+		_, err = c.alternateUpdateStatus(ctx, copyConditions(degradedCondition, progressingCondition, completedCondition)...)
 		return err
 	}
 
@@ -154,34 +170,35 @@ func (c *latencyProfileController) sync(ctx context.Context, syncCtx factory.Syn
 		}
 	}
 
-	progressingCondition := metav1.Condition{
-		Type:   apiconfigv1.KubeAPIServerProgressing,
-		Status: metav1.ConditionUnknown,
-	}
-	completedCondition := metav1.Condition{
-		Type:   apiconfigv1.KubeAPIServerComplete,
-		Status: metav1.ConditionUnknown,
-	}
 	if revisionsHaveSynced {
-		// API Server has Completed rollout
+		// APIServer has Completed rollout
 		completedCondition.Status = metav1.ConditionTrue
-		completedCondition.Message = "all kube-api-server(s) have updated latency profile"
+		completedCondition.Message = "all kube-apiserver(s) have updated latency profile"
 		completedCondition.Reason = reasonLatencyProfileUpdated
 
-		// API Server is not Progressing rollout
+		// APIServer is not Progressing rollout
 		progressingCondition.Status = metav1.ConditionFalse
 		progressingCondition.Reason = reasonLatencyProfileUpdated
+
+		// APIServer is not Degraded
+		degradedCondition.Status = metav1.ConditionFalse
+		degradedCondition.Reason = reasonLatencyProfileUpdated
 	} else {
-		// API Server has not Completed rollout
+		// APIServer has not Completed rollout
 		completedCondition.Status = metav1.ConditionFalse
 		completedCondition.Reason = reasonLatencyProfileUpdateTriggered
 
-		// API Server is Progressing rollout
+		// APIServer is Progressing rollout
 		progressingCondition.Status = metav1.ConditionTrue
-		progressingCondition.Message = "kube-api-server(s) are updating latency profile"
+		progressingCondition.Message = "kube-apiserver(s) are updating latency profile"
 		progressingCondition.Reason = reasonLatencyProfileUpdateTriggered
+
+		// APIServer is not Degraded
+		degradedCondition.Status = metav1.ConditionFalse
+		degradedCondition.Reason = reasonLatencyProfileUpdateTriggered
 	}
-	_, err = c.updateConfigNodeStatus(ctx, progressingCondition, completedCondition)
+	_, _ = c.updateConfigNodeStatus(ctx, degradedCondition, progressingCondition, completedCondition)
+	_, err = c.alternateUpdateStatus(ctx, copyConditions(degradedCondition, progressingCondition, completedCondition)...)
 	return err
 }
 
