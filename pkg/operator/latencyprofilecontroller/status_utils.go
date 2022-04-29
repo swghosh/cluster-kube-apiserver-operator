@@ -4,18 +4,21 @@ import (
 	"context"
 	"time"
 
-	"k8s.io/client-go/util/retry"
-
-	operatorv1 "github.com/openshift/api/operator/v1"
-	"github.com/openshift/library-go/pkg/operator/v1helpers"
 	"k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/util/retry"
+
+	apiconfigv1 "github.com/openshift/api/config/v1"
+	operatorv1 "github.com/openshift/api/operator/v1"
+	"github.com/openshift/library-go/pkg/operator/v1helpers"
 )
 
 const (
 	reasonLatencyProfileUpdateTriggered = "ProfileUpdateTriggered"
 	reasonLatencyProfileUpdated         = "ProfileUpdated"
 	reasonLatencyProfileEmpty           = "ProfileEmpty"
+
+	wlpPrefix = "WorkerLatencyProfile"
 )
 
 // setWLPStatusCondition is used to set condition in config node object status.workerLatencyProfileStatus
@@ -89,10 +92,16 @@ func (c *latencyProfileController) alternateUpdateStatus(ctx context.Context, ne
 }
 
 func copyConditions(conditions ...metav1.Condition) []operatorv1.OperatorCondition {
+	operatorTypes := map[string]string{
+		apiconfigv1.KubeAPIServerComplete:    wlpPrefix + "Complete",
+		apiconfigv1.KubeAPIServerDegraded:    wlpPrefix + operatorv1.OperatorStatusTypeDegraded,
+		apiconfigv1.KubeAPIServerProgressing: wlpPrefix + operatorv1.OperatorStatusTypeProgressing,
+	}
+
 	operatorConditions := make([]operatorv1.OperatorCondition, len(conditions))
 	for i, condition := range conditions {
 		operatorConditions[i] = operatorv1.OperatorCondition{
-			Type:    condition.Type,
+			Type:    operatorTypes[condition.Type],
 			Status:  operatorv1.ConditionStatus(condition.Status),
 			Message: condition.Message,
 			Reason:  condition.Reason,
