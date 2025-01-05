@@ -51,7 +51,6 @@ func KeysWithPotentiallyPersistedDataAndNextReadKey(grs []schema.GroupResource, 
 	return recentFirstSortedKeys
 }
 
-// TODO: make sure sort takes into account for KMS keys
 func SortRecentFirst(unsorted []KeyState) []KeyState {
 	ret := make([]KeyState, len(unsorted))
 	copy(ret, unsorted)
